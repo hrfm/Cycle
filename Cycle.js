@@ -13,29 +13,65 @@ var hrfm;
             this.f.call(this.s, a);
             return this.n;
         };
+        Closure.prototype.equals = function (closure, scope) {
+            if (typeof scope === "undefined") { scope = null; }
+            return (closure == this.f && scope == this.s);
+        };
         return Closure;
     })();
     hrfm.Closure = Closure;    
     var ClosureList = (function () {
         function ClosureList() {
-            this._closures = [];
         }
         ClosureList.prototype.add = function (closure, scope, priority) {
             if (typeof scope === "undefined") { scope = null; }
             if (typeof priority === "undefined") { priority = 0; }
-            var fnc = new Closure(closure, scope, priority);
-            var len = this._closures.length;
-
-            if(0 < len) {
-                this._closures[len - 1].n = fnc;
+            var c = this.head;
+            while(c) {
+                if(c.equals(closure, scope)) {
+                    return;
+                }
+                c = c.n;
             }
-            this._closures[len] = fnc;
+            c = new Closure(closure, scope, priority);
+            if(!this.head) {
+                this.head = this.tail = c;
+            } else {
+                this.tail.n = c;
+                this.tail = c;
+            }
+        };
+        ClosureList.prototype.remove = function (closure, scope) {
+            if (typeof scope === "undefined") { scope = null; }
+            var b4;
+            var c = this.head;
+
+            while(c) {
+                if(c.equals(closure, scope)) {
+                    if(b4) {
+                        b4.n = c.n;
+                        if(!b4.n) {
+                            this.tail = b4;
+                        }
+                    } else {
+                        if(c == this.head) {
+                            this.head = c.n;
+                        } else {
+                            b4.n = c.n;
+                        }
+                    }
+                    c = null;
+                    return;
+                }
+                b4 = c;
+                c = c.n;
+            }
         };
         ClosureList.prototype.execute = function () {
-            if(this._closures.length == 0) {
+            if(!this.head) {
                 return;
             }
-            var c = this._closures[0];
+            var c = this.head;
             if(typeof arguments === 'undefined') {
                 while(c) {
                     c = c.e();
@@ -52,57 +88,81 @@ var hrfm;
     var Cycle = (function () {
         function Cycle(interval) {
             if (typeof interval === "undefined") { interval = 16; }
-            this._interval = interval;
-            this._initialTime = Date.now();
-            this._y = {
-                'start': new ClosureList(),
-                'stop': new ClosureList(),
-                'cycle': new ClosureList()
-            };
+            this.interval = interval;
+            this.initialTime = Date.now();
+            this._start = new ClosureList();
+            this._stop = new ClosureList();
+            this._cycle = new ClosureList();
             this._requestAnimationFrame = window['requestAnimationFrame'] || window['webkitRequestAnimationFrame'] || window['mozRequestAnimationFrame'] || window['oRequestAnimationFrame'] || window['msRequestAnimationFrame'] || function (callback) {
                 return setTimeout(callback, 8);
             };
             this._cancelAnimationFrame = window['cancelRequestAnimationFrame'] || window['webkitCancelAnimationFrame'] || window['webkitCancelRequestAnimationFrame'] || window['mozCancelRequestAnimationFrame'] || window['oCancelRequestAnimationFrame'] || window['msCancelRequestAnimationFrame'] || clearTimeout;
         }
         Cycle.prototype.start = function () {
-            if(this._running == true) {
+            if(this.running == true) {
                 return;
             }
             var that = this;
-            var time = Date.now();
-            this._startTime = time;
-            this._onTimeout = function () {
-                var now = Date.now();
-                this.elapsedTime += now - time;
-                time = now;
-                that._y['cycle'].execute();
-                that._timerID = setTimeout(that._onTimeout, that._interval);
+            var _now = 0;
+            var _time = Date.now();
+            var _startTime = _time;
+            var _onTimeout = function () {
+                _now = Date.now();
+                that.elapsedTime += _now - _time;
+                _time = _now;
+                that._cycle.execute();
+                that._timerID = setTimeout(_onTimeout, that.interval);
             };
-            this._timerID = setTimeout(this._onTimeout, this._interval);
-            this._running = true;
-            this._y['start'].execute();
+
+            this._timerID = setTimeout(_onTimeout, this.interval);
+            this.running = true;
+            this._start.execute();
         };
         Cycle.prototype.stop = function () {
-            if(this._running == false) {
+            if(this.running == false) {
                 return;
             }
             clearTimeout(this._timerID);
-            this._cancelAnimationFrame.call(window, this._animateID);
-            this._running = false;
-            this._y['stop'].execute();
+            this._timerID = 0;
+            this.running = false;
+            this._stop.execute();
         };
-        Cycle.prototype.running = function () {
-            return this._running;
-        };
-        Cycle.prototype.bind = function (state, closure, scope) {
-            if(typeof this._y[state] === 'undefined') {
-                return;
+        Cycle.prototype.on = function (state, closure, scope) {
+            switch(state) {
+                case 'start': {
+                    this._start.add(closure, scope);
+                    break;
+
+                }
+                case 'stop': {
+                    this._stop.add(closure, scope);
+                    break;
+
+                }
+                case 'cycle': {
+                    this._cycle.add(closure, scope);
+                    break;
+
+                }
             }
-            this._y[state].add(closure, scope);
         };
-        Cycle.prototype.unbind = function (state, closure, scope) {
-            if(typeof this._y[state] === 'undefined') {
-                return;
+        Cycle.prototype.off = function (state, closure, scope) {
+            switch(state) {
+                case 'start': {
+                    this._start.remove(closure, scope);
+                    break;
+
+                }
+                case 'stop': {
+                    this._stop.remove(closure, scope);
+                    break;
+
+                }
+                case 'cycle': {
+                    this._cycle.remove(closure, scope);
+                    break;
+
+                }
             }
         };
         return Cycle;

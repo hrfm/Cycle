@@ -27,33 +27,60 @@ module hrfm{
             this.f.call( this.s, a );
             return this.n;
         }
+        equals( closure:Function, scope:Object = null ):Boolean{
+            return ( closure == this.f && scope == this.s )
+        }
     }
 
     export class ClosureList{
 
         // ------- MEMBER --------------------
+        
+        head:Closure;
+        tail:Closure;
 
-        private _closures:Closure[];
-        fnc:Function;
         // ------- PUBLIC --------------------
 
-        constructor(){
-            this._closures = [];
-        }
+        constructor(){}
 
         add( closure:Function, scope:Object = null, priority:number = 0 ):void{
-            var fnc:Closure    = new Closure( closure, scope, priority ),
-                len:number = this._closures.length;
-            if( 0 < len ) this._closures[len-1].n = fnc;
-            this._closures[len] = fnc;
+            var c:Closure = this.head;
+            while(c){
+                if( c.equals( closure, scope ) ) return;
+                c = c.n;
+            }
+            c = new Closure( closure, scope, priority );
+            if( !this.head ){
+                this.head = this.tail = c;
+            }else{
+                this.tail.n = c;
+                this.tail = c;
+            }
+        }
+
+        remove( closure:Function, scope:Object = null ):void{
+            var b4:Closure, c:Closure = this.head;
+            while(c){
+                if( c.equals( closure, scope ) ){
+                    if( b4 ){
+                        b4.n = c.n;
+                        if(!b4.n) this.tail = b4;
+                    }else if( c == this.head ){
+                        this.head = c.n;
+                    }else{
+                        b4.n = c.n;
+                    }
+                    c = null;
+                    return;
+                }
+                b4 = c;
+                c = c.n;
+            }
         }
 
         execute():void{
-
-            if( this._closures.length == 0 ) return;
-
-            var c:Closure = this._closures[0];
-
+            if( !this.head ) return;
+            var c:Closure = this.head;
             if( typeof arguments === 'undefined' ){
                 while(c) c = c.e();
             }else{
@@ -74,38 +101,32 @@ module hrfm{
 
         // ------- MEMBER --------------------------------------------
 
+        interval    : number;
+        initialTime : number;
         elapsedTime : number;
-
-        private _interval    : number;
-        private _initialTime : number;
-        private _startTime   : number;
-
-        private _running : Boolean;
-
-        private _timerID   : number;
-        private _onTimeout : Function;
-
-        private _animateID : number;
-        private _onAnimate : Function;
-
+        
+        running : Boolean;
+        
+        private _timerID     : number;
+        private _animateID   : number;
+        
         private _requestAnimationFrame:Function;
         private _cancelAnimationFrame :Function;
 
-        private _y:Object;
+        private _start : ClosureList;
+        private _stop  : ClosureList;
+        private _cycle : ClosureList;
 
         // ------- PUBLIC --------------------------------------------
 
         constructor( interval:number = 16 ){
 
-            this._interval = interval;
-            this._initialTime = Date.now();
+            this.interval = interval;
+            this.initialTime = Date.now();
 
-            this._y = {
-                'start' : new ClosureList(),
-                'stop'  : new ClosureList(),
-                'cycle' : new ClosureList()
-            }
-
+            this._start = new ClosureList();
+            this._stop  = new ClosureList();
+            this._cycle = new ClosureList();
 
             // アニメーション管理用の処理
             this._requestAnimationFrame =
@@ -132,25 +153,21 @@ module hrfm{
          */
         start(){
 
-            if( this._running == true ) return;
+            if( this.running == true ) return;
 
-            var that = this;
-            var time:number = Date.now();
+            var that = this,
+                _now       : number   = 0,
+                _time      : number   = Date.now(),
+                _startTime : number   = _time,
+                _onTimeout : Function = function():void{
+                    _now = Date.now();
+                    that.elapsedTime += _now - _time;
+                    _time = _now;
+                    that._cycle.execute();
+                    that._timerID = setTimeout( _onTimeout, that.interval );
+                }
 
-            this._startTime = time;
-
-            this._onTimeout = function(){
-
-                var now:number = Date.now();
-
-                this.elapsedTime += now - time;
-                time = now;
-
-                that._y['cycle'].execute();
-                that._timerID = setTimeout( that._onTimeout, that._interval );
-
-            }
-            this._timerID = setTimeout( this._onTimeout, this._interval );
+            this._timerID = setTimeout( _onTimeout, this.interval );
 
             /*
             this._onAnimate = function(){
@@ -160,9 +177,9 @@ module hrfm{
             this._animateID = this._requestAnimationFrame.call( window, this._onAnimate );
             */
 
-            this._running = true;
+            this.running = true;
 
-            this._y['start'].execute();
+            this._start.execute();
 
         }
 
@@ -171,39 +188,57 @@ module hrfm{
          */
         stop(){
 
-            if( this._running == false ) return;
+            if( this.running == false ) return;
 
             clearTimeout( this._timerID );
-            this._cancelAnimationFrame.call( window, this._animateID );
+            this._timerID = 0;
 
-            this._running = false;
+            //this._cancelAnimationFrame.call( window, this._animateID );
 
-            this._y['stop'].execute();
+            this.running = false;
 
-        }
+            this._stop.execute();
 
-        /**
-         * 監視サイクルが実行中であるかを調べます.
-         * @return
-         */
-        running():Boolean{
-            return this._running;
         }
 
         /**
          * 監視サイクルのイベントをListenします.
+         * @param state
+         * @param closure
+         * @param scope
          */
-        bind( state:string, closure:Function, scope:Object ){
-            if( typeof this._y[state] === 'undefined' ) return;
-            this._y[state].add( closure, scope );
+        on( state:string, closure:Function, scope:Object ){
+            switch( state ){
+                case 'start' :
+                    this._start.add( closure, scope );
+                    break;
+                case 'stop' :
+                    this._stop.add( closure, scope );
+                    break;
+                case 'cycle' :
+                    this._cycle.add( closure, scope );
+                    break;
+            }
         }
 
         /**
          * 監視サイクルのイベントのListenを解除します.
+         * @param state
+         * @param closure
+         * @param scope
          */
-        unbind( state:string, closure:Function, scope:Object ){
-            if( typeof this._y[state] === 'undefined' ) return;
-            //_y[state].remove( closure, scope );
+        off( state:string, closure:Function, scope:Object ){
+            switch( state ){
+                case 'start' :
+                    this._start.remove( closure, scope );
+                    break;
+                case 'stop' :
+                    this._stop.remove( closure, scope );
+                    break;
+                case 'cycle' :
+                    this._cycle.remove( closure, scope );
+                    break;
+            }
         }
 
         // ------- PRIVATE -------------------------------------------
