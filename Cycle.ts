@@ -199,7 +199,7 @@ module hrfm{
          * @param closure
          * @param scope
          */
-        on( state:string, closure:Function, scope:Object ){
+        on( state:string, closure:Function, scope:Object ):Cycle{
             switch( state ){
                 case 'start' :
                     this._start.add( closure, scope );
@@ -211,6 +211,7 @@ module hrfm{
                     this._cycle.add( closure, scope );
                     break;
             }
+            return this;
         }
 
         /**
@@ -219,7 +220,7 @@ module hrfm{
          * @param closure
          * @param scope
          */
-        off( state:string, closure:Function, scope:Object ){
+        off( state:string, closure:Function, scope:Object ):Cycle{
             switch( state ){
                 case 'start' :
                     this._start.remove( closure, scope );
@@ -231,6 +232,7 @@ module hrfm{
                     this._cycle.remove( closure, scope );
                     break;
             }
+            return this;
         }
 
         // ------- PRIVATE -------------------------------------------

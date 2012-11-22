@@ -149,6 +149,7 @@ var hrfm;
 
                 }
             }
+            return this;
         };
         Cycle.prototype.off = function (state, closure, scope) {
             switch(state) {
@@ -168,6 +169,7 @@ var hrfm;
 
                 }
             }
+            return this;
         };
         return Cycle;
     })();
