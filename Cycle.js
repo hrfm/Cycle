@@ -88,13 +88,14 @@ var hrfm;
     var Cycle = (function () {
         function Cycle(interval) {
             if (typeof interval === "undefined") { interval = 16; }
+            this.running = false;
             this.interval = interval;
             this.initialTime = Date.now();
             this._start = new ClosureList();
             this._stop = new ClosureList();
             this._cycle = new ClosureList();
             this._requestAnimationFrame = window['requestAnimationFrame'] || window['webkitRequestAnimationFrame'] || window['mozRequestAnimationFrame'] || window['oRequestAnimationFrame'] || window['msRequestAnimationFrame'] || function (callback) {
-                return setTimeout(callback, 8);
+                return setTimeout(callback, interval);
             };
             this._cancelAnimationFrame = window['cancelRequestAnimationFrame'] || window['webkitCancelAnimationFrame'] || window['webkitCancelRequestAnimationFrame'] || window['mozCancelRequestAnimationFrame'] || window['oCancelRequestAnimationFrame'] || window['msCancelRequestAnimationFrame'] || clearTimeout;
         }
@@ -106,15 +107,17 @@ var hrfm;
             var _now = 0;
             var _time = Date.now();
             var _startTime = _time;
-            var _onTimeout = function () {
-                _now = Date.now();
-                that.elapsedTime += _now - _time;
-                _time = _now;
-                that._cycle.execute();
-                that._timerID = setTimeout(_onTimeout, that.interval);
-            };
+            var _elapsed = 0;
 
-            this._timerID = setTimeout(_onTimeout, this.interval);
+            this._onAnimate = function () {
+                _now = Date.now();
+                _elapsed = _now - _time;
+                _time = _now;
+                that.elapsedTime += _elapsed;
+                that._cycle.execute();
+                that._animateID = that._requestAnimationFrame.call(window, that._onAnimate);
+            };
+            this._animateID = this._requestAnimationFrame.call(window, that._onAnimate);
             this.running = true;
             this._start.execute();
         };
@@ -122,8 +125,9 @@ var hrfm;
             if(this.running == false) {
                 return;
             }
-            clearTimeout(this._timerID);
-            this._timerID = 0;
+            this._onAnimate = function () {
+            };
+            this._cancelAnimationFrame.call(window, this._animateID);
             this.running = false;
             this._stop.execute();
         };

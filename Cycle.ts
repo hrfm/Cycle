@@ -107,9 +107,8 @@ module hrfm{
         
         running : Boolean;
         
-        private _timerID     : number;
-        private _animateID   : number;
-        
+        private _onAnimate : Function;
+        private _animateID : number;
         private _requestAnimationFrame:Function;
         private _cancelAnimationFrame :Function;
 
@@ -121,6 +120,7 @@ module hrfm{
 
         constructor( interval:number = 16 ){
 
+            this.running  = false;
             this.interval = interval;
             this.initialTime = Date.now();
 
@@ -135,7 +135,7 @@ module hrfm{
                 window['mozRequestAnimationFrame']    ||
                 window['oRequestAnimationFrame']      ||
                 window['msRequestAnimationFrame']     ||
-                function(callback){ return setTimeout(callback, 8); };
+                function(callback){ return setTimeout(callback, interval); };
 
             this._cancelAnimationFrame =
                 window['cancelRequestAnimationFrame']       ||
@@ -159,23 +159,17 @@ module hrfm{
                 _now       : number   = 0,
                 _time      : number   = Date.now(),
                 _startTime : number   = _time,
-                _onTimeout : Function = function():void{
-                    _now = Date.now();
-                    that.elapsedTime += _now - _time;
-                    _time = _now;
-                    that._cycle.execute();
-                    that._timerID = setTimeout( _onTimeout, that.interval );
-                }
+                _elapsed   : number   = 0;
 
-            this._timerID = setTimeout( _onTimeout, this.interval );
-
-            /*
             this._onAnimate = function(){
-                that._y['cycle'].execute();
+                _now     = Date.now();
+                _elapsed = _now - _time;
+                _time    = _now;
+                that.elapsedTime += _elapsed;
+                that._cycle.execute();
                 that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
             }
-            this._animateID = this._requestAnimationFrame.call( window, this._onAnimate );
-            */
+            this._animateID = this._requestAnimationFrame.call( window, that._onAnimate );
 
             this.running = true;
 
@@ -190,10 +184,8 @@ module hrfm{
 
             if( this.running == false ) return;
 
-            clearTimeout( this._timerID );
-            this._timerID = 0;
-
-            //this._cancelAnimationFrame.call( window, this._animateID );
+            this._onAnimate = function(){};
+            this._cancelAnimationFrame.call( window, this._animateID );
 
             this.running = false;
 
