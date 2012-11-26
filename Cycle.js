@@ -43,9 +43,7 @@ var hrfm;
         };
         ClosureList.prototype.remove = function (closure, scope) {
             if (typeof scope === "undefined") { scope = null; }
-            var b4;
-            var c = this.head;
-
+            var b4, c = this.head;
             while(c) {
                 if(c.equals(closure, scope)) {
                     if(b4) {
@@ -103,12 +101,7 @@ var hrfm;
             if(this.running == true) {
                 return;
             }
-            var that = this;
-            var _now = 0;
-            var _time = Date.now();
-            var _startTime = _time;
-            var _elapsed = 0;
-
+            var that = this, _now = 0, _time = Date.now(), _startTime = _time, _elapsed = 0;
             this._onAnimate = function () {
                 _now = Date.now();
                 _elapsed = _now - _time;
@@ -175,4 +168,3 @@ var hrfm;
     })();
     hrfm.Cycle = Cycle;    
 })(hrfm || (hrfm = {}));
-
