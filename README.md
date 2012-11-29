@@ -1,6 +1,8 @@
 Cycle.js
 =====
 
+#Introduction
+
 Cycle.js は javascript での一定サイクルでの処理(アニメーション処理など)の実装を
 
 簡略化するために試作しているUtilityです.
@@ -8,6 +10,12 @@ Cycle.js は javascript での一定サイクルでの処理(アニメーショ�
 内部的な処理としては requestAnimationFrame が利用出来ればそれを使い
 
 使用出来なければ setTimeout を用いて一定間隔での処理を実行します.
+
+#Goal
+
+Flash でいう ENTER_FRAME 的なものを簡単に出来るようにしたい.
+
+CSS3 Animation 使えっていうのは、まあ、うん.
 
 #Usage
 
