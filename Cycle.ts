@@ -18,7 +18,7 @@ module hrfm{
         // next
         n : Closure;
         // ------- PUBLIC --------------------
-        constructor( closure:Function, scope:Object = null, priority:number = 0 ){
+        constructor( closure:Function, scope:Object = undefined, priority:number = 0 ){
             this.f = closure;
             this.s = scope;
             this.p = priority;
@@ -27,7 +27,7 @@ module hrfm{
             this.f.call( this.s, a );
             return this.n;
         }
-        equals( closure:Function, scope:Object = null ):Boolean{
+        equals( closure:Function, scope:Object = undefined ):Boolean{
             return ( closure == this.f && scope == this.s )
         }
     }
@@ -43,7 +43,7 @@ module hrfm{
 
         constructor(){}
 
-        add( closure:Function, scope:Object = null, priority:number = 0 ):void{
+        add( closure:Function, scope:Object = undefined, priority:number = 0 ):void{
             var c:Closure = this.head;
             while(c){
                 if( c.equals( closure, scope ) ) return;
@@ -58,8 +58,9 @@ module hrfm{
             }
         }
 
-        remove( closure:Function, scope:Object = null ):void{
-            var b4:Closure, c:Closure = this.head;
+        remove( closure:Function, scope:Object = undefined ):void{
+            var c:Closure = this.head,
+                b4:Closure;
             while(c){
                 if( c.equals( closure, scope ) ){
                     if( b4 ){
@@ -78,14 +79,92 @@ module hrfm{
             }
         }
 
-        execute():void{
+        removeAll():void{
+            var c:Closure = this.head,
+                n:Closure;
+            while( c ){
+                n = c.n;
+                c = null;
+                c = n;
+            }
+            this.head = null;
+            this.tail = null;
+        }
+
+        execute( eventObject:Object = undefined ):void{
             if( !this.head ) return;
             var c:Closure = this.head;
-            if( typeof arguments === 'undefined' ){
+            if( typeof eventObject === 'undefined' ){
                 while(c) c = c.e();
             }else{
-                while(c) c = c.e(arguments);
+                while(c) c = c.e(eventObject);
             }
+        }
+
+    }
+
+    export class EventDispatcher{
+
+        // ------- MEMBER --------------------------------------------
+        
+        private _hash_:ClosureList[];
+
+        // ------- PUBLIC --------------------------------------------
+
+        constructor(){
+            this._hash_ = [];
+        }
+
+        /**
+         * 指定した state のイベントを Listen します.
+         * @param state
+         * @param closure
+         * @param scope
+         */
+        on( state:string, closure:Function, scope:Object = undefined ):EventDispatcher{
+            var i:number, s:string,
+                list:string[] = state.split(' '),
+                len:number = list.length;
+            for( i=0; i<len; i++ ){
+                s = list[i];
+                if( !this._hash_[s] ){
+                    this._hash_[s] = new ClosureList();
+                }
+                this._hash_[s].add( closure, scope );
+            }
+            return this;
+        }
+
+        /**
+         * 指定した state のイベントの Listen を解除します.
+         * @param state
+         * @param closure
+         * @param scope
+         */
+        off( state:string, closure:Function = undefined, scope:Object = undefined ):EventDispatcher{
+            var i:number, s:string,
+                list:string[] = state.split(' '),
+                len:number = list.length;
+            for( i=0; i<len; i++ ){
+                s = list[i];
+                if( !this._hash_[s] ){
+                    continue;
+                }
+                if( typeof closure === 'undefined' ){
+                    this._hash_[s].removeAll();
+                }else{
+                    this._hash_[s].remove( closure, scope );
+                }
+            }
+            return this;
+        }
+
+        /**
+         * 指定した state のイベントを発行します.
+         * @param state
+         */
+        execute( state:string, eventObject:Object = null ):void{
+            if( this._hash_[state] ) this._hash_[state].execute(eventObject);
         }
 
     }
@@ -97,7 +176,7 @@ module hrfm{
      * @author KAWAKITA Hirofumi.
      * @version 0.1
      */
-    export class Cycle{
+    export class Cycle extends EventDispatcher{
 
         // ------- MEMBER --------------------------------------------
 
@@ -112,21 +191,15 @@ module hrfm{
         private _requestAnimationFrame:Function;
         private _cancelAnimationFrame :Function;
 
-        private _start : ClosureList;
-        private _stop  : ClosureList;
-        private _cycle : ClosureList;
-
         // ------- PUBLIC --------------------------------------------
 
         constructor( interval:number = 16 ){
 
+            super();
+
             this.running  = false;
             this.interval = interval;
             this.initialTime = Date.now();
-
-            this._start = new ClosureList();
-            this._stop  = new ClosureList();
-            this._cycle = new ClosureList();
 
             // アニメーション管理用の処理
             this._requestAnimationFrame =
@@ -166,14 +239,14 @@ module hrfm{
                 _elapsed = _now - _time;
                 _time    = _now;
                 that.elapsedTime += _elapsed;
-                that._cycle.execute();
+                that.execute('cycle');
                 that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
             }
             this._animateID = this._requestAnimationFrame.call( window, that._onAnimate );
-
+            
             this.running = true;
-
-            this._start.execute();
+            
+            this.execute('start');
 
         }
 
@@ -189,50 +262,8 @@ module hrfm{
 
             this.running = false;
 
-            this._stop.execute();
+            this.execute('stop');
 
-        }
-
-        /**
-         * 監視サイクルのイベントをListenします.
-         * @param state
-         * @param closure
-         * @param scope
-         */
-        on( state:string, closure:Function, scope:Object ):Cycle{
-            switch( state ){
-                case 'start' :
-                    this._start.add( closure, scope );
-                    break;
-                case 'stop' :
-                    this._stop.add( closure, scope );
-                    break;
-                case 'cycle' :
-                    this._cycle.add( closure, scope );
-                    break;
-            }
-            return this;
-        }
-
-        /**
-         * 監視サイクルのイベントのListenを解除します.
-         * @param state
-         * @param closure
-         * @param scope
-         */
-        off( state:string, closure:Function, scope:Object ):Cycle{
-            switch( state ){
-                case 'start' :
-                    this._start.remove( closure, scope );
-                    break;
-                case 'stop' :
-                    this._stop.remove( closure, scope );
-                    break;
-                case 'cycle' :
-                    this._cycle.remove( closure, scope );
-                    break;
-            }
-            return this;
         }
 
         // ------- PRIVATE -------------------------------------------
