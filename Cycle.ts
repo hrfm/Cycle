@@ -193,7 +193,7 @@ module hrfm{
 
         // ------- PUBLIC --------------------------------------------
 
-        constructor( interval:number = 16 ){
+        constructor( interval:number = 0 ){
 
             super();
 
@@ -208,7 +208,7 @@ module hrfm{
                 window['mozRequestAnimationFrame']    ||
                 window['oRequestAnimationFrame']      ||
                 window['msRequestAnimationFrame']     ||
-                function(callback){ return setTimeout(callback, interval); };
+                function(callback){ return setTimeout(callback, interval || 1 ); };
 
             this._cancelAnimationFrame =
                 window['cancelRequestAnimationFrame']       ||
@@ -232,20 +232,38 @@ module hrfm{
                 _now       : number   = 0,
                 _time      : number   = Date.now(),
                 _startTime : number   = _time,
-                _elapsed   : number   = 0;
+                _elapsed   : number   = 0,
+                _interval  : number   = this.interval;
 
-            this._onAnimate = function(){
-                _now     = Date.now();
-                _elapsed = _now - _time;
-                _time    = _now;
-                that.elapsedTime += _elapsed;
-                that.execute('cycle');
-                that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
+            // 単位時間ごとの処理を最適化するか.
+            if( 0 < _interval ){
+                this._onAnimate = function(){
+                    _now = Date.now();
+                    if( _interval * 100 < _now - _time ){
+                        _time = _now - _interval;
+                    }
+                    while( _interval <= _now - _time ){
+                        _elapsed = _now - _time;
+                        that.elapsedTime += _elapsed;
+                        _time += _interval;
+                        that.execute( 'cycle', _now - _time < _interval );
+                    }
+                    that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
+                }
+            }else{
+                this._onAnimate = function(){
+                    _now     = Date.now();
+                    _elapsed = _now - _time;
+                    that.elapsedTime += _elapsed;
+                    that.execute( 'cycle', true );
+                    _time = _now;
+                    that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
+                }
             }
             this._animateID = this._requestAnimationFrame.call( window, that._onAnimate );
-            
+
             this.running = true;
-            
+
             this.execute('start');
 
         }
