@@ -1,4 +1,4 @@
-/// <reference path="hrfm/hrfm.events.d.ts" />
+/// <reference path="hrfm.events.d.ts" />
 class Cycle extends hrfm.events.EventDispatcher {
     public interval: number;
     public initialTime: number;

@@ -1,4 +1,4 @@
-/// <reference path="./hrfm/hrfm.events.d.ts" />
+/// <reference path="hrfm.events.d.ts" />
 
 /**
  * 時間監視を行うユーティリティクラスです.
