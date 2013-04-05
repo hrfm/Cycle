@@ -27,11 +27,13 @@ CSS3 Animation 使えっていうのは、まあ、うん.
 
 cycle 発生時の処理方法は後述の on 関数を参照してください。
 
-## on(type,closure,scope)
+## on(type,closure,scope,priority)
 
 Cycle は jQuery などと同様に on 関数を用いて実行内容を定義します.
 
 scope に参照を渡す事で、 closure の実行する際の this 参照を指定する事が出来ます。
+
+この on で追加される
 
 ### type
 
@@ -66,6 +68,12 @@ cycle の回数を引数に実行されます。
 ### scope
 
 scope には closure を実行する際の this 参照のスコープを渡す事が出来ます。
+
+### priority
+
+ここで指定した、数値の値が高い順に実行されます。
+
+必ず初めに実行したいもの等をここでコントロールする事が可能です。
 
 ## off(type,closure,scope)
 
