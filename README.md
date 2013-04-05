@@ -107,7 +107,7 @@ Cycle による一定間隔処理を開始します。
 
 Cycle による一定間隔処理を停止します。
 
-## exsample
+# exsample
 
     var cycle = new Cycle();
     cycle
