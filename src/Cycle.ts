@@ -438,125 +438,126 @@ module hrfm{
 
     }
 
-    /**
-     * 時間監視を行うユーティリティクラスです.
-     * 利用可能であれば AnimationFrame を利用し、描画タイミングの最適化を行いやすくします.
-     * 
-     * @author KAWAKITA Hirofumi.
-     * @version 0.1
-     */
-    export class Cycle extends EventDispatcher{
+}
 
-        // ------- MEMBER --------------------------------------------
 
-        interval    : number;
-        initialTime : number;
-        elapsedTime : number;
-        running     : Boolean;
+/**
+ * 時間監視を行うユーティリティクラスです.
+ * 利用可能であれば AnimationFrame を利用し、描画タイミングの最適化を行いやすくします.
+ * 
+ * @author KAWAKITA Hirofumi.
+ * @version 0.1
+ */
+class Cycle extends hrfm.EventDispatcher{
+
+    // ------- MEMBER --------------------------------------------
+
+    interval    : number;
+    initialTime : number;
+    elapsedTime : number;
+    running     : Boolean;
+    
+    private _onAnimate : Function;
+    private _animateID : number;
+    private _requestAnimationFrame:Function;
+    private _cancelAnimationFrame :Function;
+
+    // ------- PUBLIC --------------------------------------------
+
+    constructor( interval:number = 0 ){
         
-        private _onAnimate : Function;
-        private _animateID : number;
-        private _requestAnimationFrame:Function;
-        private _cancelAnimationFrame :Function;
+        super();
 
-        // ------- PUBLIC --------------------------------------------
+        this.running  = false;
+        this.interval = interval;
+        this.initialTime = new Date().getTime();
+        this.elapsedTime = 0;
 
-        constructor( interval:number = 0 ){
-            
-            super();
+        // アニメーション管理用の処理
+        this._requestAnimationFrame =
+            window['requestAnimationFrame']       ||
+            window['webkitRequestAnimationFrame'] ||
+            window['mozRequestAnimationFrame']    ||
+            window['oRequestAnimationFrame']      ||
+            window['msRequestAnimationFrame']     ||
+            function(callback){ return setTimeout(callback, 17 ); };
 
-            this.running  = false;
-            this.interval = interval;
-            this.initialTime = new Date().getTime();
-            this.elapsedTime = 0;
-
-            // アニメーション管理用の処理
-            this._requestAnimationFrame =
-                window['requestAnimationFrame']       ||
-                window['webkitRequestAnimationFrame'] ||
-                window['mozRequestAnimationFrame']    ||
-                window['oRequestAnimationFrame']      ||
-                window['msRequestAnimationFrame']     ||
-                function(callback){ return setTimeout(callback, 17 ); };
-
-            this._cancelAnimationFrame =
-                window['cancelRequestAnimationFrame']       ||
-                window['webkitCancelAnimationFrame']        ||
-                window['webkitCancelRequestAnimationFrame'] ||
-                window['mozCancelRequestAnimationFrame']    ||
-                window['oCancelRequestAnimationFrame']      ||
-                window['msCancelRequestAnimationFrame']     ||
-                clearTimeout;
-
-        }
-
-        /**
-         * 監視サイクルを開始します.
-         */
-        start(){
-
-            if( this.running == true ) return;
-
-            var that = this,
-                _i         : number,
-                _now       : number = 0,
-                _time      : number = new Date().getTime(),
-                _startTime : number = _time,
-                _elapsed   : number = 0,
-                _interval  : number = this.interval;
-
-            // 単位時間ごとの処理を最適化するか.
-            if( 0 < _interval ){
-                this._onAnimate = function(){
-                    _now = new Date().getTime();
-                    if( _interval * 100 < _now - _time ){
-                        _time = _now - _interval;
-                    }
-                    _elapsed = _now - _time;
-                    if( _interval < _elapsed ){
-                        var times:number = ~~(_elapsed/_interval);
-                        _time += times * _interval;
-                        that.execute( 'cycle', times );
-                    }
-                    that.elapsedTime += _elapsed;
-                    that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
-                }
-            }else{
-                this._onAnimate = function(){
-                    _now     = new Date().getTime();
-                    _elapsed = _now - _time;
-                    that.elapsedTime += _elapsed;
-                    that.execute( 'cycle', 1 );
-                    _time = _now;
-                    that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
-                }
-            }
-            this._animateID = this._requestAnimationFrame.call( window, that._onAnimate );
-
-            this.running = true;
-
-            this.execute('start');
-
-        }
-
-        /**
-         * 監視サイクルを停止します.
-         */
-        stop(){
-
-            if( this.running == false ) return;
-
-            this._onAnimate = function(){};
-            this._cancelAnimationFrame.call( window, this._animateID );
-
-            this.running = false;
-
-            this.execute('stop');
-
-        }
-        
-        // ------- PRIVATE -------------------------------------------
+        this._cancelAnimationFrame =
+            window['cancelRequestAnimationFrame']       ||
+            window['webkitCancelAnimationFrame']        ||
+            window['webkitCancelRequestAnimationFrame'] ||
+            window['mozCancelRequestAnimationFrame']    ||
+            window['oCancelRequestAnimationFrame']      ||
+            window['msCancelRequestAnimationFrame']     ||
+            clearTimeout;
 
     }
+
+    /**
+     * 監視サイクルを開始します.
+     */
+    start(){
+
+        if( this.running == true ) return;
+
+        var that = this,
+            _i         : number,
+            _now       : number = 0,
+            _time      : number = new Date().getTime(),
+            _startTime : number = _time,
+            _elapsed   : number = 0,
+            _interval  : number = this.interval;
+
+        // 単位時間ごとの処理を最適化するか.
+        if( 0 < _interval ){
+            this._onAnimate = function(){
+                _now = new Date().getTime();
+                if( _interval * 100 < _now - _time ){
+                    _time = _now - _interval;
+                }
+                _elapsed = _now - _time;
+                if( _interval < _elapsed ){
+                    var times:number = ~~(_elapsed/_interval);
+                    _time += times * _interval;
+                    that.execute( 'cycle', times );
+                }
+                that.elapsedTime += _elapsed;
+                that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
+            }
+        }else{
+            this._onAnimate = function(){
+                _now     = new Date().getTime();
+                _elapsed = _now - _time;
+                that.elapsedTime += _elapsed;
+                that.execute( 'cycle', 1 );
+                _time = _now;
+                that._animateID = that._requestAnimationFrame.call( window, that._onAnimate );
+            }
+        }
+        this._animateID = this._requestAnimationFrame.call( window, that._onAnimate );
+
+        this.running = true;
+
+        this.execute('start');
+
+    }
+
+    /**
+     * 監視サイクルを停止します.
+     */
+    stop(){
+
+        if( this.running == false ) return;
+
+        this._onAnimate = function(){};
+        this._cancelAnimationFrame.call( window, this._animateID );
+
+        this.running = false;
+
+        this.execute('stop');
+
+    }
+    
+    // ------- PRIVATE -------------------------------------------
 
 }

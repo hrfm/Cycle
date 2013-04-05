@@ -58,17 +58,17 @@ module hrfm {
         public execute(state: string, eventObject?: Object): void;
         public removeAllListeners(): void;
     }
-    class Cycle extends EventDispatcher {
-        public interval: number;
-        public initialTime: number;
-        public elapsedTime: number;
-        public running: Boolean;
-        private _onAnimate;
-        private _animateID;
-        private _requestAnimationFrame;
-        private _cancelAnimationFrame;
-        constructor (interval?: number);
-        public start(): void;
-        public stop(): void;
-    }
+}
+class Cycle extends hrfm.EventDispatcher {
+    public interval: number;
+    public initialTime: number;
+    public elapsedTime: number;
+    public running: Boolean;
+    private _onAnimate;
+    private _animateID;
+    private _requestAnimationFrame;
+    private _cancelAnimationFrame;
+    constructor (interval?: number);
+    public start(): void;
+    public stop(): void;
 }
