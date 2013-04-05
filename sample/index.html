@@ -1,6 +1,5 @@
 <html>
 <head>
-	<script type="text/javascript" src='js/hrfm.events.js'></script>
 	<script type="text/javascript" src='js/Cycle.js'></script>
 	<script type="text/javascript" src='js/jquery-1.8.2.min.js'></script>
 	<script type="text/javascript">
@@ -10,8 +9,8 @@
 				el    = $('#time'),
 				el2   = $('#random'),
 				rect  = $('#rect'),
-				cycle = new Cycle();
-
+				cycle = new hrfm.Cycle();
+			
 			cycle
 				.on('start',function(){
 					btn.html('stop');
