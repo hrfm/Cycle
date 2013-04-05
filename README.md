@@ -61,7 +61,7 @@ Cycle による一定間隔処理を停止します.
 
 ## exsample
 
-    var cycle = new hrfm.Cycle();
+    var cycle = new Cycle();
     cycle
       .on('start', function(){
         // 
