@@ -122,3 +122,7 @@ Cycle による一定間隔処理を停止します。
       }, this )
     ;
     cycle.start();
+
+# Lisence
+
+Released under the MIT, and GPL Licenses.
