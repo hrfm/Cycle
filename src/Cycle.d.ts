@@ -1,19 +1,5 @@
 /// <reference path="hrfm.events.d.ts" />
 module hrfm {
-    class Event {
-        static WHEEL: string;
-        static RESIZE: string;
-        static START: string;
-        static MOVE: string;
-        static END: string;
-        static CANCEL: string;
-        static TRNEND: string;
-        static TOUCH_SUPPORTED: Boolean;
-        static initialize(hasTouch: Boolean, vendor, isGecko: Boolean): void;
-        static bind(target, type: string, callback: Function, useCapture?: Boolean): void;
-        static unbind(target, type: string, callback: Function, useCapture?: Boolean): void;
-        static click(target): void;
-    }
     interface IClosure {
         n: IClosure;
         e: (a: any) => IClosure;

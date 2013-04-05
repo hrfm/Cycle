@@ -3,82 +3,6 @@
 module hrfm{
 
     // ==========================================================================================
-    // === Event.
-
-    export class Event{
-
-        static WHEEL:string;
-        static RESIZE:string;
-        static START:string;
-        static MOVE:string;
-        static END:string;
-        static CANCEL:string;
-        static TRNEND:string;
-
-        static TOUCH_SUPPORTED:Boolean;
-
-        /**
-         * Event の設定初期化
-         * App.js より実行される前提で設計されている.
-         */
-        static initialize( hasTouch:Boolean, vendor, isGecko:Boolean ){
-
-            TOUCH_SUPPORTED = hasTouch;
-
-            WHEEL  = isGecko ? "DOMMouseScroll" : 'mousewheel';
-            RESIZE = 'onorientationchange' in window ? 'orientationchange' : 'resize';
-            START  = hasTouch ? 'touchstart'  : 'mousedown';
-            MOVE   = hasTouch ? 'touchmove'   : 'mousemove';
-            END    = hasTouch ? 'touchend'    : 'mouseup';
-            CANCEL = hasTouch ? 'touchcancel' : 'mouseup';
-            TRNEND = (function () {
-                if ( vendor === false ) return false;
-                var transitionEnd = {
-                        ''          : 'transitionend',
-                        'webkit'    : 'webkitTransitionEnd',
-                        'Moz'       : 'transitionend',
-                        'O'         : 'otransitionend',
-                        'ms'        : 'MSTransitionEnd'
-                    };
-                return transitionEnd[vendor];
-            })();
-
-        }
-
-        /**
-         * イベントリスナを登録します.
-         */
-        static bind( target, type:string, callback:Function, useCapture:Boolean = false ):void{
-            target.addEventListener( type, callback, useCapture );
-        }
-
-        /**
-         * イベントリスナを解除します.
-         */
-        static unbind( target, type:string, callback:Function, useCapture:Boolean = false ):void{
-            target.removeEventListener( type, callback, useCapture );
-        }
-
-        /**
-         * 引数で指定した Element から click イベントを発行します.
-         */
-        static click( target ):void{
-            if( 'fireEvent' in target ){
-                target.fireEvent('onclick');
-                return;
-            }
-            if( typeof target.click === 'function' ){
-                target.click();
-                return;
-            }
-            var evt = document.createEvent( "MouseEvents" ); // マウスイベントを作成
-            evt.initEvent( "click", false, true ); // イベントの詳細を設定
-            target.dispatchEvent( evt ); // イベントを強制的に発生させる
-        }
-
-    }
-
-    // ==========================================================================================
     // === EventDispatcher.
 
     export interface IClosure{
@@ -439,7 +363,6 @@ module hrfm{
     }
 
 }
-
 
 /**
  * 時間監視を行うユーティリティクラスです.
