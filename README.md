@@ -11,11 +11,31 @@ Cycle.js は javascript での一定サイクルでの処理(アニメーショ�
 
 使用出来なければ setTimeout を用いて一定間隔での処理を実行します.
 
+#Feature
+
+##Simple
+
+書くべきコードが少ない。
+
+##Able to set priority.
+
+on 関数でリスナを登録する際に
+
+priority を指定する事で、処理順序を指定する事が出来ます。
+
+##Fast
+
+大量の関数を on 関数で追加した際にも
+
+極力 Cycle 自体に処理のオーバーヘッドが無い様に努めています。
+
 #Goal
 
-Flash でいう ENTER_FRAME 的なものを簡単に出来るようにしたい.
+Flash でいう ENTER_FRAME 的なものを簡単に出来るようにしたい。
 
-CSS3 Animation 使えっていうのは、まあ、うん.
+とにかくオーバーヘッドを少なく。
+
+コード圧縮したい。
 
 #Usage
 
