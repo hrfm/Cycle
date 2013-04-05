@@ -19,9 +19,17 @@ CSS3 Animation 使えっていうのは、まあ、うん.
 
 #Usage
 
+## new Cycle(interval);
+
+### interval
+
+ここで指定したミリ秒間隔で cycle を発行します。
+cycle 発生時の処理方法は後述の on 関数を参照してください。
+
 ## on(type,closure,scope)
 
 Cycle は jQuery などと同様に on 関数を用いて実行内容を定義します.
+scope に参照を渡す事で、 closure の実行する際の this 参照を指定する事が出来ます。
 
 ### type
 
@@ -33,7 +41,21 @@ type は 'start', 'cycle', 'stop' の三種類があります.
 
 - cycle
 
-    一定間隔で発行されます.
+    原則的にはコンストラクタで指定した間隔で発行されます.
+    
+    しかし、処理負荷が高まった時などには、指定した interval の間隔を
+    超えてしまう事があります.
+    そういった影響を無視出来るの状況であれば良いのですが
+    多くのアニメーション処理の場合、時間との整合性は極めて重要です.
+    
+    そういった状況に対応するため、cycle で実行される closure の引数には
+    経過時間あたりに cycle を何回発行すべきであったかを引数に渡しています.
+    
+    たとえば interval を 16 ミリ秒に指定していたが
+    処理負荷によって 50 ミリ秒経過してしまった場合
+    Math.floor( 50 / 16 ) = 3 を引数に渡します.
+    
+    遅延無く実行された場合には 1 が渡されます.
 
 - stop
 
@@ -42,6 +64,9 @@ type は 'start', 'cycle', 'stop' の三種類があります.
 ### closure
 
 closure はtype で指定したタイミングで実行される関数を渡します.
+
+前述のとおり、発行時間間隔において実行されるべきであった
+cycle の回数を引数に実行されます.
 
 ### scope
 
@@ -66,7 +91,7 @@ Cycle による一定間隔処理を停止します.
       .on('start', function(){
         // 
       }, this )
-      .on('cycle', function(){
+      .on('cycle', function(times){
         // 
       }, this )
       .on('stop', function(){
