@@ -1,0 +1,21 @@
+{
+  "name": "Cycle.js",
+  "version": "0.0.1",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "hrfm <hrfm0818@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "gulp-subtask": "^0.3.1",
+    "gulp-util": "^3.0.4",
+    "gulp": "^3.8.11",
+    "gulp-tsc": "^0.9.3",
+    "gulp-plumber": "^1.0.0",
+    "gulp-filter": "^2.0.2",
+    "gulp-uglify": "^1.2.0",
+    "gulp-rename": "^1.2.2"
+  }
+}
